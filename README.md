@@ -3,6 +3,9 @@ milters-python
 
 A collection of milters (mail filters) written in python to help my mail processing.
 
+Built on the pure-python libmilter implementation by Jay Deiman (crustymonkey):
+https://github.com/crustymonkey/python-libmilter
+
 <p xmlns:dct="http://purl.org/dc/terms/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#">
   <a rel="license"
      href="http://creativecommons.org/publicdomain/zero/1.0/">
