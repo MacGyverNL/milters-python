@@ -1,8 +1,9 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # milter-addmessageid - Milter to add message-id to mails without it.
 #
 # Written in 2014 by Pol Van Aubel <dev@polvanaubel.com>
+# Updated in 2022 to python3 by Pol Van Aubel <dev@polvanaubel.com>
 #
 # To the extent possible under law, the author(s) have dedicated all copyright
 # and related and neighboring rights to this software to the public domain
@@ -11,6 +12,12 @@
 # You should have received a copy of the CC0 Public Domain Dedication along
 # with this software. If not, see
 # <http://creativecommons.org/publicdomain/zero/1.0/>.
+# 
+# 
+# This software is built on the pure-python libmilter implementation by Jay
+# Deiman (crustymonkey): https://github.com/crustymonkey/python-libmilter
+# which is licensed under the GNU Lesser General Public License v3.0
+#
 
 """Python-based milter to add message-id headers to mails without them.
 
@@ -31,12 +38,12 @@ working with this mail to use the Message-ID as the basis for any thread by
 using it in In-Reply-To fields.
 """
 
-import codecs
-import libmilter as lm
 import os
 import socket
 import sys
 import time
+
+import libmilter as lm
 
 
 class MessageIDMilter(lm.ThreadMixin, lm.MilterProtocol):
@@ -64,7 +71,7 @@ class MessageIDMilter(lm.ThreadMixin, lm.MilterProtocol):
 
     def log(self, message):
         """Print the message to stdout."""
-        print >> sys.stdout, message
+        print(message, file=sys.stdout)
         sys.stdout.flush()
 
     def header(self, key, val, cmdDict):
@@ -75,7 +82,7 @@ class MessageIDMilter(lm.ThreadMixin, lm.MilterProtocol):
         processing is cheap, just CONTINUE.
         """
         # self.log("Header received: {!s} with value {!s}".format(key, val))
-        if key.lower() == "message-id":
+        if key.lower() == b"message-id":
             self.has_messageid = True
         return lm.CONTINUE
 
@@ -86,7 +93,7 @@ class MessageIDMilter(lm.ThreadMixin, lm.MilterProtocol):
             self.has_messageid = False
             return lm.CONTINUE
         else:
-            key = "Message-ID"
+            key = b"Message-ID"
             val = self.create_messageid()
             self.log("Message without Message-ID received. "
                      "Adding header: {!s} with value {!s}".format(key, val))
@@ -116,12 +123,13 @@ class MessageIDMilter(lm.ThreadMixin, lm.MilterProtocol):
         If the system does not return any string for fqdn, we substitute 8
         random bytes.
         """
-        microseconds = codecs.decode(str(int(time.time() * 1000000)), "utf8")
-        random_part = codecs.encode(os.urandom(8), "hex").decode("utf8")
+        microseconds = str(int(time.time() * 1000000))
+        random_part = os.urandom(8).hex()
         fqdn = socket.getfqdn()
         if not fqdn:
-            fqdn = codecs.encode(os.urandom(8), "hex").decode("utf8")
-        return " <" + microseconds + "." + random_part + "@" + fqdn + ">"
+            fqdn = os.urandom(8).hex()
+        message_id = " <" + microseconds + "." + random_part + "@" + fqdn + ">"
+        return message_id.encode("utf8")
 
 
 def run_messageidmilter():
@@ -157,7 +165,8 @@ def run_messageidmilter():
         factory.run()
     except Exception:
         e = sys.exc_info()
-        print >> sys.stderr, "EXCEPTION OCCURRED: {!s}".format(e)
+        print("EXCEPTION OCCURRED: {!s}".format(e), file=sys.stderr)
+        sys.stderr.flush()
         factory.close()
         raise
 
